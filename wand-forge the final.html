@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wand Forge</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0810;--bg2:#110e1a;--bg3:#1a1528;--bg4:#221d35;
+  --gold:#c8a84b;--gold2:#e8c86a;--gold3:#f5e0a0;
+  --ember:#d4522a;--ember2:#f07040;
+  --frost2:#70b8f0;--storm2:#a87aee;
+  --earth:#5a8a3a;--earth2:#82b85a;
+  --void2:#8a58c0;
+  --text:#e8dfc8;--text2:#b0a080;--text3:#706050;
+  --border:#3a3060;--border2:#5a4a80;
+  --hp2:#e05050;--mp2:#40a0f0;
+}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Text',serif;font-size:16px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* SCREENS */
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* MENU */
+#screen-menu{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#1e1635 0%,#0a0810 70%)}
+.menu-title{font-size:3rem;font-family:'Cinzel',serif;color:var(--gold2);text-shadow:0 0 40px #c8a84b88;letter-spacing:.12em;margin-bottom:.3rem}
+.menu-sub{font-size:1rem;color:var(--text2);letter-spacing:.25em;margin-bottom:2.5rem}
+.rune-row{display:flex;gap:1.5rem;margin-bottom:2.5rem;font-size:2rem}
+
+/* BUTTONS */
+.btn{background:linear-gradient(135deg,#1e1635,#2a2045);border:1px solid var(--gold);color:var(--gold2);font-family:'Cinzel',serif;font-size:1rem;letter-spacing:.08em;padding:.65rem 2rem;cursor:pointer;transition:all .2s;border-radius:2px;line-height:1}
+.btn:hover{background:linear-gradient(135deg,#2a2045,#3a3060);box-shadow:0 0 20px #c8a84b44;color:var(--gold3)}
+.btn:active{transform:scale(.97)}
+.btn-sm{padding:.35rem 1rem;font-size:.78rem}
+.btn-danger{border-color:var(--ember);color:var(--ember2)}
+.btn-danger:hover{box-shadow:0 0 15px #d4522a44}
+.btn-accept{border-color:var(--earth);color:var(--earth2)}
+.btn-accept:hover{box-shadow:0 0 15px #5a8a3a44}
+.btn-wide{width:100%}
+
+/* TOPBAR */
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.4rem 1.2rem;display:flex;align-items:center;gap:1.2rem;flex-shrink:0;min-height:0}
+.tb-title{font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);letter-spacing:.08em}
+.tb-badge{background:var(--bg4);border:1px solid var(--gold);border-radius:2px;padding:.1rem .6rem;font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold2)}
+.tb-stat{font-size:.8rem;color:var(--text2)}
+.tb-stat b{color:var(--gold2)}
+.spacer{flex:1}
+.phase-label{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.15em;color:var(--storm2)}
+
+/* PHASE BAR */
+#phase-bar{background:var(--bg4);border-bottom:1px solid var(--border);padding:.25rem 1rem;display:flex;gap:1rem;flex-shrink:0}
+.ph{font-size:.72rem;color:var(--text3);padding:.12rem .5rem;border-radius:2px;font-family:'Cinzel',serif}
+.ph.active{background:var(--bg3);color:var(--gold2);border:1px solid var(--border2)}
+
+/* MAIN GRID */
+#game-main{flex:1;display:grid;grid-template-columns:210px 1fr 250px;overflow:hidden;min-height:0}
+.panel{display:flex;flex-direction:column;overflow:hidden}
+.panel-head{font-size:.68rem;letter-spacing:.15em;color:var(--text3);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border);flex-shrink:0;font-family:'Cinzel',serif}
+.panel-scroll{flex:1;overflow-y:auto;padding:.4rem}
+#panel-left{background:var(--bg2);border-right:1px solid var(--border)}
+#panel-right{background:var(--bg2);border-left:1px solid var(--border)}
+
+/* CENTER */
+#panel-center{background:var(--bg3);display:flex;flex-direction:column;overflow:hidden}
+#assign-view{display:flex;flex-direction:column;flex:1;overflow:hidden}
+#forge-header{padding:.5rem .8rem .3rem;font-size:.68rem;letter-spacing:.15em;color:var(--text3);border-bottom:1px solid var(--border);font-family:'Cinzel',serif;flex-shrink:0}
+#mage-zone{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:.5rem}
+#mage-zone h4{font-size:.68rem;letter-spacing:.15em;color:var(--text3);margin-bottom:.4rem;font-family:'Cinzel',serif;flex-shrink:0}
+#mage-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.35rem}
+#battle-view{display:none;flex-direction:column;flex:1;overflow:hidden;padding:.6rem;gap:.5rem}
+.wave-hdr{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold);flex-shrink:0}
+#enemy-row{display:flex;gap:.3rem;flex-wrap:wrap;flex-shrink:0}
+.enemy-chip{background:var(--bg4);border:1px solid var(--ember);border-radius:2px;padding:.08rem .35rem;font-size:.65rem;color:var(--ember2)}
+#battle-log{flex:1;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:.4rem;font-size:.78rem;color:var(--text2);max-height:120px}
+#battle-log .le{padding:.08rem 0;border-bottom:1px solid #ffffff06}
+#battle-log .kill{color:var(--ember2)}
+#battle-log .lvl{color:var(--gold2)}
+#battle-log .dead{color:#cc3333}
+#battle-log .heal{color:var(--earth2)}
+#battle-controls{display:flex;gap:.5rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
+#spd-label{font-size:.72rem;color:var(--text3)}
+
+/* WAND CARDS */
+.wand-card{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:.45rem .5rem;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:.3rem}
+.wand-card:hover{border-color:var(--border2);background:var(--bg4)}
+.wand-card.sel{border-color:var(--gold);background:var(--bg4);box-shadow:0 0 8px #c8a84b22}
+.wand-card.used{opacity:.45;pointer-events:none}
+.wc-name{font-family:'Cinzel',serif;font-size:.73rem;color:var(--gold2);margin-bottom:.15rem}
+.wc-el{font-size:.65rem}
+.wc-stats{display:flex;gap:.25rem;margin-top:.2rem;flex-wrap:wrap}
+.wst{font-size:.62rem;padding:.03rem .25rem;border-radius:2px;background:var(--bg)}
+.wst.hp{color:var(--hp2)}
+.wst.mp{color:var(--mp2)}
+.wst.pw{color:var(--gold2)}
+
+/* MAGE CARDS */
+.mage-card{background:var(--bg4);border:1px solid var(--border);border-radius:3px;padding:.4rem .5rem;display:flex;gap:.5rem}
+.mage-card.compat-hi{border-color:var(--earth)}
+.mage-card.compat-lo{border-color:var(--ember);opacity:.75}
+.mp-ico{width:34px;height:34px;background:var(--bg2);border:1px solid var(--border2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.mi{flex:1;min-width:0}
+.mi-name{font-family:'Cinzel',serif;font-size:.73rem;color:var(--text);margin-bottom:.1rem}
+.mi-class{font-size:.63rem;color:var(--text3)}
+.mi-aff{font-size:.63rem;color:var(--text2);margin:.08rem 0}
+.mi-bases{display:flex;gap:.25rem;margin:.15rem 0;flex-wrap:wrap}
+.sp{font-size:.6rem;padding:.03rem .25rem;border-radius:2px;background:var(--bg3);color:var(--text2)}
+.mi-actions{display:flex;gap:.3rem;margin-top:.25rem;flex-wrap:wrap}
+.compat-badge{font-size:.62rem;padding:.05rem .3rem;border-radius:2px;font-weight:600;display:inline-block}
+.cb-hi{background:#5a8a3a22;color:var(--earth2);border:1px solid var(--earth)}
+.cb-mid{background:#8a6a1a22;color:#c09030;border:1px solid #8a6a1a}
+.cb-lo{background:#8a302022;color:var(--ember2);border:1px solid var(--ember)}
+
+/* ACTIVE MAGE */
+.am-card{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:.4rem .5rem;margin-bottom:.35rem}
+.am-name{font-family:'Cinzel',serif;font-size:.72rem;color:var(--gold2);margin-bottom:.2rem;display:flex;align-items:center;gap:.4rem}
+.bar-row{display:flex;align-items:center;gap:.25rem;margin:.06rem 0}
+.bar-lbl{font-size:.6rem;color:var(--text3);width:18px}
+.bar-bg{flex:1;height:5px;background:var(--bg);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width .25s}
+.hpf{background:var(--hp2)}
+.mpf{background:var(--mp2)}
+.am-stats{display:flex;gap:.3rem;margin-top:.2rem;flex-wrap:wrap}
+
+/* ELEMENT COLORS */
+.el-fire{color:#e06030}.el-frost{color:var(--frost2)}.el-storm{color:var(--storm2)}
+.el-earth{color:var(--earth2)}.el-void{color:var(--void2)}.el-arcane{color:#d070d0}
+
+/* RIGHT ACTIONS */
+#right-actions{padding:.4rem;flex-shrink:0}
+
+/* RESULT SCREEN */
+#screen-result{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#1e1635 0%,#0a0810 70%)}
+.res-box{text-align:center;max-width:500px;width:90%}
+.res-title{font-size:2rem;color:var(--gold2);font-family:'Cinzel',serif;margin-bottom:.4rem}
+.res-sub{color:var(--text2);font-style:italic;margin-bottom:2rem;font-size:.95rem}
+.res-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:2rem}
+.rs{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:.7rem}
+.rs-lbl{font-size:.65rem;color:var(--text3);font-family:'Cinzel',serif;letter-spacing:.1em;margin-bottom:.3rem}
+.rs-val{font-size:1.6rem;color:var(--gold2)}
+.res-btns{display:flex;gap:1rem;justify-content:center}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* NOTIF */
+.notif{position:fixed;top:56px;right:16px;background:var(--bg4);border:1px solid var(--gold);border-radius:3px;padding:.4rem .9rem;font-size:.78rem;color:var(--gold2);font-family:'Cinzel',serif;z-index:9999;pointer-events:none;animation:nfade 2.8s forwards}
+@keyframes nfade{0%{opacity:0;transform:translateY(-8px)}12%{opacity:1;transform:translateY(0)}75%{opacity:1}100%{opacity:0}}
+.ptcl{position:fixed;pointer-events:none;z-index:9999;font-size:1.2rem;animation:ptup 1.1s forwards}
+@keyframes ptup{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-55px) scale(.6)}}
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<div id="screen-menu" class="screen active">
+  <div class="rune-row">🔥❄️⚡🌿🌑✨</div>
+  <div class="menu-title">WAND FORGE</div>
+  <div class="menu-sub">ELEMENTAL MASTERY</div>
+  <button class="btn" id="btn-start">Begin Forging</button>
+  <div style="margin-top:1.5rem;color:var(--text3);font-size:.82rem;max-width:380px;text-align:center;line-height:1.8">
+    Forge elemental wands · Assign them to compatible mages · Survive escalating waves
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div id="topbar">
+    <div class="tb-title">⚗ WAND FORGE</div>
+    <div class="tb-badge" id="level-badge">Level 1</div>
+    <div class="tb-stat">Score: <b id="score-disp">0</b></div>
+    <div class="tb-stat">Kills: <b id="kills-disp">0</b></div>
+    <div class="spacer"></div>
+    <div class="phase-label" id="phase-label">ASSIGNMENT</div>
+  </div>
+  <div id="phase-bar">
+    <div class="ph active" id="ph1">① Assign Wands</div>
+    <div class="ph" id="ph2">② Battle</div>
+    <div class="ph" id="ph3">③ Results</div>
+  </div>
+  <div id="game-main">
+    <!-- LEFT: Wands -->
+    <div id="panel-left" class="panel">
+      <div class="panel-head">FORGED WANDS — click to select</div>
+      <div class="panel-scroll" id="wand-list"></div>
+    </div>
+    <!-- CENTER -->
+    <div id="panel-center" class="panel">
+      <!-- Assign view -->
+      <div id="assign-view">
+        <div id="forge-header">SELECT A WAND, THEN ASSIGN TO A MAGE BELOW</div>
+        <div id="mage-zone">
+          <h4>MAGE QUEUE</h4>
+          <div id="mage-scroll"></div>
+        </div>
+      </div>
+      <!-- Battle view -->
+      <div id="battle-view">
+        <div class="wave-hdr" id="wave-hdr">Wave 1</div>
+        <div id="enemy-row"></div>
+        <canvas id="battle-arena" style="width:100%;height:180px;background:var(--bg);border:1px solid var(--border);border-radius:3px;display:block;flex-shrink:0"></canvas>
+        <div id="battle-log"></div>
+        <div id="battle-controls">
+          <button class="btn btn-sm" id="btn-battle">▶ Start Battle</button>
+          <span id="spd-label">Speed: Normal</span>
+          <button class="btn btn-sm" id="btn-speed">⏩ Fast</button>
+        </div>
+      </div>
+    </div>
+    <!-- RIGHT: Active mages -->
+    <div id="panel-right" class="panel">
+      <div class="panel-head">ASSIGNED MAGES</div>
+      <div class="panel-scroll" id="active-list"></div>
+      <div id="right-actions">
+        <button class="btn btn-sm btn-accept btn-wide" id="btn-to-battle">⚔ Send to Battle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT (win) -->
+<div id="screen-result" class="screen">
+  <div class="res-box">
+    <div class="res-title" id="res-title">Level Complete!</div>
+    <div class="res-sub" id="res-sub">Your mages performed valiantly</div>
+    <div class="res-grid">
+      <div class="rs"><div class="rs-lbl">KILLS</div><div class="rs-val" id="res-kills">0</div></div>
+      <div class="rs"><div class="rs-lbl">SURVIVORS</div><div class="rs-val" id="res-surv">0</div></div>
+      <div class="rs"><div class="rs-lbl">SCORE</div><div class="rs-val" id="res-score">0</div></div>
+    </div>
+    <div class="res-btns">
+      <button class="btn" id="btn-next">Next Level ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEATH SCREEN (loss) -->
+<div id="screen-death" class="screen" style="align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#1e0a0a 0%,#0a0810 70%)">
+  <div class="res-box">
+    <div style="font-size:3.5rem;margin-bottom:1rem">☠️</div>
+    <div class="res-title" style="color:#e05050">Mages Died</div>
+    <div class="res-sub" style="margin-bottom:1.5rem">Your order has been wiped out.</div>
+    <div class="res-grid">
+      <div class="rs"><div class="rs-lbl">KILLS</div><div class="rs-val" id="death-kills">0</div></div>
+      <div class="rs"><div class="rs-lbl">LEVEL</div><div class="rs-val" id="death-level">1</div></div>
+      <div class="rs"><div class="rs-lbl">SCORE</div><div class="rs-val" id="death-score">0</div></div>
+    </div>
+    <div class="res-btns">
+      <button class="btn" id="btn-restart" onclick="freshStart()">↺ Restart</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────
+const ELEMENTS = ['Fire','Frost','Storm','Earth','Void','Arcane'];
+const EL_EMOJI = {Fire:'🔥',Frost:'❄️',Storm:'⚡',Earth:'🌿',Void:'🌑',Arcane:'✨'};
+const EL_CLS   = {Fire:'el-fire',Frost:'el-frost',Storm:'el-storm',Earth:'el-earth',Void:'el-void',Arcane:'el-arcane'};
+const MAGE_CLS  = ['Evoker','Conjurer','Arcanist','Elementalist','Runemancer','Battlemage'];
+const MAGE_ICON = {Evoker:'🧙',Conjurer:'🪄',Arcanist:'📿',Elementalist:'🌊',Runemancer:'📖',Battlemage:'⚔️'};
+const W_PRE = ['Ember','Glacial','Tempest','Verdant','Shadow','Crystal','Infernal','Blizzard','Thunder','Thorn'];
+const W_SFX = ['Rod','Staff','Scepter','Wand','Stave','Branch'];
+const NAMES = ['Aelric','Brom','Caela','Dwyn','Elara','Finn','Gwynn','Holt','Isara','Jaryn','Kessa','Loryn','Mira','Nyss','Oran','Petra','Quinn','Rael','Sael','Thane'];
+const ENEMIES = [
+  {name:'Goblin',hp:30,dmg:8,reward:5,icon:'👺'},
+  {name:'Troll',hp:80,dmg:15,reward:12,icon:'🧌'},
+  {name:'Drake',hp:120,dmg:22,reward:20,icon:'🐉'},
+  {name:'Wraith',hp:60,dmg:25,reward:15,icon:'👻'},
+  {name:'Giant',hp:200,dmg:30,reward:35,icon:'🏔️'},
+  {name:'Demon',hp:160,dmg:40,reward:45,icon:'😈'},
+];
+const EL_BONUS = {
+  Fire:  {Goblin:1.2,Troll:1.0,Drake:0.8,Wraith:1.3,Giant:1.0,Demon:1.4},
+  Frost: {Goblin:1.0,Troll:1.0,Drake:1.3,Wraith:0.9,Giant:1.2,Demon:1.1},
+  Storm: {Goblin:1.3,Troll:1.2,Drake:1.0,Wraith:1.0,Giant:0.9,Demon:1.2},
+  Earth: {Goblin:1.0,Troll:1.3,Drake:1.1,Wraith:0.8,Giant:1.4,Demon:0.9},
+  Void:  {Goblin:0.9,Troll:0.9,Drake:1.2,Wraith:1.5,Giant:1.0,Demon:1.3},
+  Arcane:{Goblin:1.1,Troll:1.1,Drake:1.1,Wraith:1.1,Giant:1.1,Demon:1.1},
+};
+const LEVELS = [
+  {enemies:10,waves:2,addWands:3,addMages:4,hpm:1.0,dmm:1.0},
+  {enemies:16,waves:2,addWands:2,addMages:3,hpm:1.3,dmm:1.2},
+  {enemies:22,waves:3,addWands:2,addMages:2,hpm:1.7,dmm:1.5},
+  {enemies:30,waves:3,addWands:1,addMages:2,hpm:2.1,dmm:1.9},
+  {enemies:38,waves:4,addWands:1,addMages:1,hpm:2.6,dmm:2.3},
+];
+let uid = 1;
+function mkId(){ return 'id'+(uid++); }
+
+// ── STATE ───────────────────────────────────────────
+let G;
+function initState(){
+  G = {
+    level:0, score:0, totalKills:0,
+    wands:[], mages:[], activeMages:[],
+    selWand:null,
+    phase:'assign',
+    waveIdx:0, waveEnemies:[],
+    levelKills:0,
+    log:[],
+  };
+  makeWands(3);
+  makeMages(4);
+}
+
+function makeWands(n){
+  for(let i=0;i<n;i++){
+    const el = rnd(ELEMENTS);
+    G.wands.push({
+      id:mkId(),
+      name: rnd(W_PRE)+' '+rnd(W_SFX),
+      el, hp: 10+Math.floor(Math.random()*8)*10,
+      mp: 10+Math.floor(Math.random()*8)*10,
+      pw: 15+Math.floor(Math.random()*12)*5,
+      owner:null
+    });
+  }
+}
+function makeMages(n){
+  for(let i=0;i<n;i++){
+    const cls = rnd(MAGE_CLS), aff = rnd(ELEMENTS);
+    G.mages.push({
+      id:mkId(), name:rnd(NAMES), cls, aff,
+      bHP:80+ri(5)*10, bMP:60+ri(5)*10, bPW:20+ri(5)*5,
+      wand:null, hp:0,maxHP:0,mp:0,maxMP:0,pw:0,
+      alive:true, kills:0, active:false,
+    });
+  }
+}
+function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+function ri(n){ return Math.floor(Math.random()*n); }
+
+// ── COMPATIBILITY ───────────────────────────────────
+function compat(wand, mage){
+  if(!wand) return 0;
+  let s = 0;
+  if(wand.el === mage.aff) s+=40;
+  else if(harmony(wand.el, mage.aff)) s+=20;
+  s += Math.round((wand.hp/200)*30);
+  s += Math.round((wand.pw/120)*30);
+  return Math.min(100, s);
+}
+function harmony(a,b){
+  return [['Fire','Storm'],['Frost','Void'],['Earth','Arcane']].some(p=>(p[0]===a&&p[1]===b)||(p[1]===a&&p[0]===b));
+}
+
+// ── ACTIONS ─────────────────────────────────────────
+window.selectWand = function(id){
+  if(G.phase!=='assign') return;
+  G.selWand = (G.selWand===id) ? null : id;
+  renderAll();
+};
+
+window.assignWand = function(wandId, mageId){
+  const wand = G.wands.find(w=>w.id===wandId);
+  const mage = G.mages.find(m=>m.id===mageId);
+  if(!wand||!mage){ console.warn('assign failed',wandId,mageId); return; }
+  // Unlink previous owner of this wand
+  if(wand.owner){
+    const prev = G.mages.find(m=>m.id===wand.owner);
+    if(prev){ prev.wand=null; prev.active=false; }
+  }
+  // Unlink previous wand of this mage
+  if(mage.wand){
+    const prevW = G.wands.find(w=>w.id===mage.wand);
+    if(prevW) prevW.owner=null;
+  }
+  wand.owner = mageId;
+  mage.wand  = wandId;
+  mage.active= true;
+  mage.maxHP = mage.bHP + wand.hp;
+  mage.hp    = mage.maxHP;
+  mage.maxMP = mage.bMP + wand.mp;
+  mage.mp    = mage.maxMP;
+  mage.pw    = mage.bPW + wand.pw;
+  mage.alive = true;
+  mage.kills = 0;
+  G.selWand  = null;
+  renderAll();
+  notify(wand.name + ' assigned to ' + mage.name);
+  particle('✨', event);
+};
+
+window.denyMage = function(mageId){
+  const i = G.mages.findIndex(m=>m.id===mageId);
+  if(i>=0){ G.mages.splice(i,1); renderAll(); }
+};
+
+// ── RENDER ───────────────────────────────────────────
+function renderAll(){
+  renderWands();
+  renderMageQueue();
+  renderActiveMages();
+  showHideBattleBtn();
+}
+
+function renderWands(){
+  document.getElementById('wand-list').innerHTML = G.wands.map(w=>{
+    const sel = w.id===G.selWand ? 'sel' : '';
+    const used= w.owner ? 'used' : '';
+    return `<div class="wand-card ${sel} ${used}" onclick="selectWand('${w.id}')">
+      <div class="wc-name">${w.name}</div>
+      <div class="wc-el ${EL_CLS[w.el]}">${EL_EMOJI[w.el]} ${w.el}</div>
+      <div class="wc-stats">
+        <span class="wst hp">❤️+${w.hp}</span>
+        <span class="wst mp">💧+${w.mp}</span>
+        <span class="wst pw">⚡+${w.pw}</span>
+      </div>
+      ${w.owner?'<div style="font-size:.6rem;color:var(--text3);margin-top:.15rem">In use</div>':''}
+    </div>`;
+  }).join('');
+}
+
+function renderMageQueue(){
+  const box = document.getElementById('mage-scroll');
+  const unassigned = G.mages.filter(m=>!m.wand);
+  if(!unassigned.length){
+    box.innerHTML='<div style="color:var(--text3);font-size:.8rem;font-style:italic;padding:.4rem">All mages assigned</div>';
+    return;
+  }
+  const selW = G.wands.find(w=>w.id===G.selWand)||null;
+  box.innerHTML = unassigned.map(m=>{
+    const c = compat(selW, m);
+    let cBadge='', cClass='';
+    if(selW){
+      if(c>=60){ cBadge='High'; cClass='cb-hi'; }
+      else if(c>=30){ cBadge='Fair'; cClass='cb-mid'; }
+      else { cBadge='Low'; cClass='cb-lo'; }
+    }
+    const cardCls = selW ? (c>=55?'compat-hi': c<25?'compat-lo':'') : '';
+    return `<div class="mage-card ${cardCls}">
+      <div class="mp-ico">${MAGE_ICON[m.cls]||'🧙'}</div>
+      <div class="mi">
+        <div class="mi-name">${m.name}</div>
+        <div class="mi-class">${m.cls}</div>
+        <div class="mi-aff">Affinity: <span class="${EL_CLS[m.aff]}">${EL_EMOJI[m.aff]} ${m.aff}</span></div>
+        <div class="mi-bases">
+          <span class="sp">❤️${m.bHP}</span>
+          <span class="sp">💧${m.bMP}</span>
+          <span class="sp">⚡${m.bPW}</span>
+        </div>
+        <div class="mi-actions">
+          ${selW
+            ? `<button class="btn btn-sm btn-accept" onclick="assignWand('${selW.id}','${m.id}')">Assign <span class="compat-badge ${cClass}">${cBadge}</span></button>`
+            : '<span style="font-size:.65rem;color:var(--text3)">← Select a wand first</span>'
+          }
+          <button class="btn btn-sm btn-danger" onclick="denyMage('${m.id}')">✕ Deny</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderActiveMages(){
+  const box = document.getElementById('active-list');
+  const list = G.mages.filter(m=>m.wand);
+  if(!list.length){
+    box.innerHTML='<div style="color:var(--text3);font-size:.8rem;font-style:italic;padding:.4rem">None assigned yet</div>';
+    return;
+  }
+  box.innerHTML = list.map(m=>{
+    const wand = G.wands.find(w=>w.id===m.wand);
+    const hpPct = m.active ? Math.max(0,Math.round(m.hp/m.maxHP*100)) : 100;
+    const mpPct = m.active ? Math.max(0,Math.round(m.mp/m.maxMP*100)) : 100;
+    const dead  = m.active && !m.alive;
+    return `<div class="am-card" style="${dead?'opacity:.38':''}">
+      <div class="am-name">
+        <span>${MAGE_ICON[m.cls]||'🧙'}</span>
+        <span>${m.name}</span>
+        ${dead?'<span>☠️</span>':''}
+        ${m.active&&m.alive?`<span style="font-size:.6rem;color:var(--text3);margin-left:auto">⚔️${m.kills}</span>`:''}
+      </div>
+      ${m.active?`
+      <div class="bar-row"><div class="bar-lbl">HP</div><div class="bar-bg"><div class="bar-fill hpf" style="width:${hpPct}%"></div></div><span style="font-size:.58rem;color:var(--text3);margin-left:.3rem">${m.hp}/${m.maxHP}</span></div>
+      <div class="bar-row"><div class="bar-lbl">MP</div><div class="bar-bg"><div class="bar-fill mpf" style="width:${mpPct}%"></div></div><span style="font-size:.58rem;color:var(--text3);margin-left:.3rem">${m.mp}/${m.maxMP}</span></div>
+      `:''}
+      <div class="am-stats">
+        <span class="sp">⚡${m.pw}</span>
+        ${wand?`<span class="sp ${EL_CLS[wand.el]}">${EL_EMOJI[wand.el]} ${wand.name}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showHideBattleBtn(){
+  const has = G.mages.some(m=>m.wand);
+  document.getElementById('btn-to-battle').style.display = (has && G.phase==='assign') ? 'block' : 'none';
+}
+
+// ── BATTLE ───────────────────────────────────────────
+let bRunning=false, bFast=false, bTimer=null;
+
+function startBattle(){
+  if(!G.mages.some(m=>m.wand)){ notify('Assign at least one wand!'); return; }
+  G.phase='battle';
+  G.waveIdx=0; G.levelKills=0; G.log=[];
+  G.activeMages = G.mages.filter(m=>m.wand).map(m=>{
+    m.active=true; m.alive=true; m.kills=0; m.hp=m.maxHP; m.mp=m.maxMP; return m;
+  });
+  document.getElementById('assign-view').style.display='none';
+  document.getElementById('battle-view').style.display='flex';
+  document.getElementById('btn-to-battle').style.display='none';
+  document.getElementById('ph1').classList.remove('active');
+  document.getElementById('ph2').classList.add('active');
+  document.getElementById('phase-label').textContent='BATTLE';
+  bRunning=false; bFast=false;
+  document.getElementById('btn-battle').textContent='▶ Start Battle';
+  document.getElementById('btn-speed').textContent='⏩ Fast';
+  document.getElementById('spd-label').textContent='Speed: Normal';
+  buildWave();
+  renderActiveMages();
+  arenaPopulate();
+}
+
+function buildWave(){
+  const cfg = LEVELS[G.level];
+  const perWave = Math.ceil(cfg.enemies/cfg.waves);
+  G.waveEnemies=[];
+  for(let i=0;i<perWave;i++){
+    const t = rnd(ENEMIES);
+    G.waveEnemies.push({
+      eid:mkId(), name:t.name, icon:t.icon,
+      maxHP:Math.round(t.hp*cfg.hpm),
+      hp:Math.round(t.hp*cfg.hpm),
+      dmg:Math.round(t.dmg*cfg.dmm),
+      reward:t.reward, alive:true
+    });
+  }
+  document.getElementById('wave-hdr').textContent='Wave '+(G.waveIdx+1)+' / '+cfg.waves;
+  renderEnemyRow();
+}
+
+function renderEnemyRow(){
+  const alive = G.waveEnemies.filter(e=>e.alive);
+  document.getElementById('enemy-row').innerHTML = alive.slice(0,18).map(e=>
+    `<div class="enemy-chip">${e.icon} ${e.name} ${e.hp}</div>`
+  ).join('');
+}
+
+function toggleBattle(){
+  if(!bRunning){
+    bRunning=true;
+    document.getElementById('btn-battle').textContent='⏸ Pause';
+    tick();
+  } else {
+    bRunning=false;
+    clearTimeout(bTimer);
+    document.getElementById('btn-battle').textContent='▶ Resume';
+  }
+}
+
+function toggleSpeed(){
+  bFast=!bFast;
+  document.getElementById('btn-speed').textContent=bFast?'🐢 Normal':'⏩ Fast';
+  document.getElementById('spd-label').textContent='Speed: '+(bFast?'Fast':'Normal');
+}
+
+function tick(){
+  if(!bRunning) return;
+  doTick();
+  bTimer = setTimeout(tick, bFast?70:280);
+}
+
+function doTick(){
+  const liveMages   = G.activeMages.filter(m=>m.alive);
+  const liveEnemies = G.waveEnemies.filter(e=>e.alive);
+  if(!liveMages.length){ addLog('💀 All mages have fallen!','dead'); endBattle(false); return; }
+  if(!liveEnemies.length){ clearWave(); return; }
+
+  // Mages attack
+  liveMages.forEach(mage=>{
+    const wand = G.wands.find(w=>w.id===mage.wand);
+    if(!wand) return;
+    const targets = G.waveEnemies.filter(e=>e.alive);
+    if(!targets.length) return;
+    const target = rnd(targets);
+    const mult = (EL_BONUS[wand.el]||{})[target.name]||1;
+    const dmg = Math.max(1,Math.round(mage.pw * mult * (.75+Math.random()*.5)));
+    target.hp -= dmg;
+    const bonus = mult>1.1?` <span style="color:var(--gold2)">(${mult.toFixed(1)}x!)</span>`:'';
+    if(target.hp<=0){
+      target.hp=0; target.alive=false;
+      mage.kills++; G.levelKills++; G.totalKills++;
+      G.score += target.reward * (G.level+1);
+      addLog(`${MAGE_ICON[mage.cls]} ${mage.name} slays ${target.icon}${target.name} [${dmg}${bonus}]`,'kill');
+      updateHUD();
+      arenaFireAttack(mage.id, target.eid, wand.el, dmg, true);
+    } else {
+      if(Math.random()<.25) addLog(`${MAGE_ICON[mage.cls]} ${mage.name} hits ${target.icon}${target.name} for ${dmg}${bonus}`,'');
+      arenaFireAttack(mage.id, target.eid, wand.el, dmg, false);
+    }
+  });
+
+  // Enemies attack
+  G.waveEnemies.filter(e=>e.alive).forEach(enemy=>{
+    const targets = G.activeMages.filter(m=>m.alive);
+    if(!targets.length) return;
+    const target = rnd(targets);
+    const dmg = Math.max(1,Math.round(enemy.dmg*(.65+Math.random()*.7)));
+    target.hp -= dmg;
+    if(target.hp<=0){
+      target.hp=0; target.alive=false;
+      addLog(`☠️ ${target.name} was slain by ${enemy.icon}${enemy.name}!`,'dead');
+      arenaEnemyAttack(target.id, dmg, true);
+    } else {
+      arenaEnemyAttack(target.id, dmg, false);
+    }
+  });
+
+  // MP regen
+  liveMages.forEach(m=>{ if(m.alive) m.mp=Math.min(m.maxMP, m.mp+Math.round(m.maxMP*.04)); });
+
+  renderEnemyRow();
+  renderActiveMages();
+  flushLog();
+}
+
+function clearWave(){
+  const cfg = LEVELS[G.level];
+  addLog('✨ Wave '+(G.waveIdx+1)+' cleared!','lvl');
+  G.waveIdx++;
+  if(G.waveIdx>=cfg.waves){ endBattle(true); return; }
+  G.activeMages.filter(m=>m.alive).forEach(m=>{
+    const h=Math.round(m.maxHP*.2);
+    m.hp=Math.min(m.maxHP,m.hp+h);
+    addLog('💚 '+m.name+' recovers '+h+' HP','heal');
+  });
+  buildWave();
+  arenaWaveChange();
+  flushLog();
+  renderActiveMages();
+}
+
+function endBattle(win){
+  bRunning=false; clearTimeout(bTimer);
+  document.getElementById('btn-battle').disabled=true;
+  document.getElementById('btn-speed').disabled=true;
+  flushLog();
+  document.getElementById('ph2').classList.remove('active');
+  document.getElementById('ph3').classList.add('active');
+  setTimeout(()=>showResult(win), 700);
+}
+
+function showResult(win){
+  const surv = G.activeMages.filter(m=>m.alive).length;
+  if(win){
+    const isLast = G.level>=LEVELS.length-1;
+    document.getElementById('res-kills').textContent=G.levelKills;
+    document.getElementById('res-surv').textContent=surv;
+    document.getElementById('res-score').textContent=G.score;
+    document.getElementById('res-title').textContent = isLast ? 'Forge Legacy Complete!' : 'Level '+(G.level+1)+' Complete!';
+    document.getElementById('res-sub').textContent = surv>0 ? surv+' mage'+(surv>1?'s':'')+' survived' : 'Pyrrhic victory — all fell but enemies defeated';
+    document.getElementById('btn-next').textContent = isLast ? 'Final Score' : 'Next Level ›';
+    document.getElementById('btn-next').onclick = isLast ? ()=>endGame() : ()=>nextLevel();
+    showScreen('result');
+  } else {
+    document.getElementById('death-kills').textContent=G.totalKills;
+    document.getElementById('death-level').textContent=G.level+1;
+    document.getElementById('death-score').textContent=G.score;
+    showScreen('death');
+  }
+}
+
+function freshStart(){
+  bRunning=false; clearTimeout(bTimer);
+  initState();
+  document.getElementById('level-badge').textContent='Level 1';
+  document.getElementById('btn-battle').disabled=false;
+  document.getElementById('btn-speed').disabled=false;
+  document.getElementById('assign-view').style.display='flex';
+  document.getElementById('battle-view').style.display='none';
+  document.getElementById('ph1').classList.add('active');
+  document.getElementById('ph2').classList.remove('active');
+  document.getElementById('ph3').classList.remove('active');
+  document.getElementById('phase-label').textContent='ASSIGNMENT';
+  updateHUD();
+  showScreen('game');
+  renderAll();
+}
+
+function nextLevel(){
+  G.level++;
+  const cfg = LEVELS[G.level];
+  // Remove dead mages; reset survivors
+  G.mages = G.mages.filter(m=>m.alive);
+  G.mages.forEach(m=>{ m.wand=null; m.active=false; m.alive=true; });
+  G.wands.forEach(w=>{ w.owner=null; });
+  makeWands(cfg.addWands);
+  makeMages(cfg.addMages);
+  G.selWand=null; G.phase='assign'; G.log=[]; G.waveIdx=0;
+  bRunning=false; clearTimeout(bTimer);
+  document.getElementById('assign-view').style.display='flex';
+  document.getElementById('battle-view').style.display='none';
+  document.getElementById('ph1').classList.add('active');
+  document.getElementById('ph2').classList.remove('active');
+  document.getElementById('ph3').classList.remove('active');
+  document.getElementById('phase-label').textContent='ASSIGNMENT';
+  document.getElementById('level-badge').textContent='Level '+(G.level+1);
+  document.getElementById('btn-battle').disabled=false;
+  document.getElementById('btn-speed').disabled=false;
+  updateHUD();
+  showScreen('game');
+  renderAll();
+  notify('Level '+(G.level+1)+' — '+cfg.addWands+' new wands, '+cfg.addMages+' new recruits');
+}
+
+function endGame(){
+  document.getElementById('res-title').textContent='Forge Legacy';
+  document.getElementById('res-sub').textContent='All five trials of the Arcane Forge complete';
+  document.getElementById('res-kills').textContent=G.totalKills;
+  document.getElementById('res-surv').textContent=G.activeMages.filter(m=>m.alive).length;
+  document.getElementById('res-score').textContent=G.score;
+  document.getElementById('btn-next').style.display='none';
+  showScreen('result');
+}
+
+// ── LOG ──────────────────────────────────────────────
+function addLog(text, cls){
+  G.log.push({text,cls});
+  if(G.log.length>150) G.log=G.log.slice(-100);
+}
+function flushLog(){
+  const box = document.getElementById('battle-log');
+  box.innerHTML = G.log.map(l=>`<div class="le ${l.cls}">${l.text}</div>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+
+// ── HUD ──────────────────────────────────────────────
+function updateHUD(){
+  document.getElementById('score-disp').textContent=G.score;
+  document.getElementById('kills-disp').textContent=G.totalKills;
+}
+
+// ── SCREENS ──────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────
+function notify(msg){
+  const n=document.createElement('div');
+  n.className='notif'; n.textContent=msg;
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(),2900);
+}
+function particle(emoji, e){
+  const p=document.createElement('div');
+  p.className='ptcl'; p.textContent=emoji;
+  p.style.left=(20+Math.random()*60)+'vw';
+  p.style.top=(20+Math.random()*55)+'vh';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),1200);
+}
+
+// ── BATTLE ANIMATION ENGINE ──────────────────────────
+const EL_COLOR = {
+  Fire:'#f07040', Frost:'#70b8f0', Storm:'#a87aee',
+  Earth:'#82b85a', Void:'#8a58c0', Arcane:'#d070d0'
+};
+const EL_GLOW = {
+  Fire:'rgba(240,112,64,0.6)', Frost:'rgba(112,184,240,0.6)', Storm:'rgba(168,122,238,0.6)',
+  Earth:'rgba(130,184,90,0.6)', Void:'rgba(138,88,192,0.6)', Arcane:'rgba(208,112,208,0.6)'
+};
+const EL_PARTICLE = {
+  Fire:['🔥','✨','💥'], Frost:['❄️','💠','✨'], Storm:['⚡','💫','✨'],
+  Earth:['🌿','💚','✨'], Void:['🌑','💜','✨'], Arcane:['✨','💫','🔮']
+};
+const ENEMY_COLORS = {
+  Goblin:'#e05050', Troll:'#c06030', Drake:'#e08030',
+  Wraith:'#a070d0', Giant:'#8090a0', Demon:'#cc3030'
+};
+
+let arena = {
+  canvas: null, ctx: null,
+  mageSprites: [],   // {id, x, y, el, icon, name, alive, hp, maxHP, shakeT:0}
+  enemySprites: [],  // {eid, x, y, icon, name, alive, hp, maxHP, shakeT:0}
+  projectiles: [],   // {x, y, tx, ty, el, speed, size, hit:false, ttl}
+  impacts: [],       // {x, y, el, r, alpha, ttl}
+  floaters: [],      // {x, y, text, color, vy, alpha, ttl}
+  raf: null,
+  lastTick: 0,
+};
+
+function arenaInit(){
+  const c = document.getElementById('battle-arena');
+  arena.canvas = c;
+  arena.ctx = c.getContext('2d');
+  // Physical resolution = 2× CSS size for sharpness
+  const resize = () => {
+    c.width  = c.offsetWidth  * 2;
+    c.height = c.offsetHeight * 2;
+    // Reposition sprites to match new canvas size
+    if(arena.mageSprites.length || arena.enemySprites.length){
+      const W = c.width, H = c.height;
+      arena.mageSprites.forEach((ms, i) => {
+        ms.x = W * 0.08 + (i % 2) * W * 0.12;
+        ms.y = H * 0.35 + Math.floor(i / 2) * (H * 0.38);
+      });
+      arena.enemySprites.forEach((es, i) => {
+        es.x = W * 0.68 + (i % 3) * W * 0.11;
+        es.y = H * 0.28 + Math.floor(i / 3) * (H * 0.32);
+      });
+    }
+  };
+  resize();
+  window.addEventListener('resize', resize);
+  arenaLoop();
+}
+
+function arenaPopulate(){
+  const c = arena.canvas;
+  const W = c.width, H = c.height;
+  arena.mageSprites = G.activeMages.map((m, i) => ({
+    id: m.id,
+    x: W * 0.08 + (i % 2) * W * 0.12,
+    y: H * 0.35 + Math.floor(i / 2) * (H * 0.38),
+    el: G.wands.find(w=>w.id===m.wand)?.el || 'Arcane',
+    icon: MAGE_ICON[m.cls] || '🧙',
+    name: m.name,
+    alive: true, hp: m.hp, maxHP: m.maxHP,
+    shakeT: 0, castT: 0,
+  }));
+  arena.enemySprites = G.waveEnemies.map((e, i) => ({
+    eid: e.eid,
+    x: W * 0.68 + (i % 3) * W * 0.11,
+    y: H * 0.28 + Math.floor(i / 3) * (H * 0.32),
+    icon: e.icon, name: e.name,
+    alive: true, hp: e.hp, maxHP: e.maxHP,
+    shakeT: 0, castT: 0,
+  }));
+  arena.projectiles = [];
+  arena.impacts = [];
+  arena.floaters = [];
+}
+
+function arenaWaveChange(){
+  const c = arena.canvas;
+  const W = c.width, H = c.height;
+  arena.enemySprites = G.waveEnemies.map((e, i) => ({
+    eid: e.eid,
+    x: W * 0.68 + (i % 3) * W * 0.11,
+    y: H * 0.28 + Math.floor(i / 3) * (H * 0.32),
+    icon: e.icon, name: e.name,
+    alive: true, hp: e.hp, maxHP: e.maxHP,
+    shakeT: 0, castT: 0,
+  }));
+  arena.mageSprites.forEach(ms => {
+    const m = G.activeMages.find(m=>m.id===ms.id);
+    if(m){ ms.hp=m.hp; ms.maxHP=m.maxHP; ms.alive=m.alive; }
+  });
+  arena.projectiles = [];
+  arena.impacts = [];
+}
+
+// Called by game logic each combat tick to fire visuals
+function arenaFireAttack(mageId, targetEid, el, dmg, killed){
+  const ms = arena.mageSprites.find(s=>s.id===mageId);
+  const es = arena.enemySprites.find(s=>s.eid===targetEid);
+  if(!ms||!es) return;
+  ms.castT = 0.35;
+  arena.projectiles.push({
+    x: ms.x, y: ms.y,
+    tx: es.x, ty: es.y,
+    el, speed: 1200, size: 10 + Math.min(dmg/10, 10),
+    hit: false, ttl: 2.0,
+    onHit: () => {
+      es.shakeT = 0.25;
+      arena.impacts.push({ x: es.x, y: es.y, el, r: 0, maxR: 36 + Math.min(dmg/5,20), alpha: 0.9, ttl: 0.4 });
+      arena.floaters.push({ x: es.x + (-12+Math.random()*24), y: es.y - 20,
+        text: killed ? '💀 '+dmg : '-'+dmg,
+        color: killed ? '#ff6060' : (EL_COLOR[el]||'#fff'),
+        vy: -90, alpha: 1.0, ttl: 0.85 });
+    }
+  });
+}
+
+function arenaEnemyAttack(targetMageId, dmg, killed){
+  const ms = arena.mageSprites.find(s=>s.id===targetMageId);
+  if(!ms) return;
+  const attackers = arena.enemySprites.filter(s=>s.alive);
+  if(!attackers.length) return;
+  const att = attackers[Math.floor(Math.random()*attackers.length)];
+  if(att.castT !== undefined) att.castT = 0.2;
+  arena.projectiles.push({
+    x: att.x, y: att.y,
+    tx: ms.x, ty: ms.y,
+    el: '__enemy__', speed: 950, size: 9,
+    hit: false, ttl: 2.0,
+    onHit: () => {
+      ms.shakeT = 0.3;
+      arena.impacts.push({ x: ms.x, y: ms.y, el: '__enemy__', r: 0, maxR: 26, alpha: 0.85, ttl: 0.35 });
+      arena.floaters.push({ x: ms.x + (-10+Math.random()*20), y: ms.y - 20,
+        text: killed ? '☠️ '+dmg : '-'+dmg,
+        color: killed ? '#cc3333' : '#e08070',
+        vy: -80, alpha: 1.0, ttl: 0.85 });
+    }
+  });
+}
+
+function arenaLoop(){
+  const now = performance.now() / 1000;
+  const dt  = Math.min(now - (arena._last || now), 0.1);
+  arena._last = now;
+
+  const c   = arena.canvas;
+  const ctx = arena.ctx;
+  if(!c || !ctx){ arena.raf = requestAnimationFrame(arenaLoop); return; }
+
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0d0b18');
+  bg.addColorStop(1, '#1a1528');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Ground line
+  ctx.save();
+  ctx.strokeStyle = '#3a3060';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.moveTo(W * 0.45, 0);
+  ctx.lineTo(W * 0.45, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // VS label
+  ctx.save();
+  ctx.font = `bold ${Math.round(14 * W/500)}px 'Cinzel', serif`;
+  ctx.fillStyle = '#5a4a80';
+  ctx.textAlign = 'center';
+  ctx.fillText('VS', W * 0.45, H * 0.52);
+  ctx.restore();
+
+  // ── MAGE SPRITES ──
+  arena.mageSprites.forEach(ms => {
+    if(ms.castT > 0) ms.castT = Math.max(0, ms.castT - dt);
+    if(ms.shakeT > 0) ms.shakeT = Math.max(0, ms.shakeT - dt);
+    const m = G.activeMages?.find(m=>m.id===ms.id);
+    if(m){ ms.alive = m.alive; ms.hp = m.hp; ms.maxHP = m.maxHP; }
+
+    const sx = ms.shakeT > 0 ? (Math.random() - 0.5) * 8 : 0;
+    const sy = ms.shakeT > 0 ? (Math.random() - 0.5) * 5 : 0;
+    const px = ms.x + sx;
+    const py = ms.y + sy;
+
+    ctx.save();
+    ctx.globalAlpha = ms.alive ? 1 : 0.28;
+
+    // Glow aura when casting
+    if(ms.castT > 0 && ms.alive){
+      const grd = ctx.createRadialGradient(px, py, 2, px, py, 38);
+      grd.addColorStop(0, EL_GLOW[ms.el] || 'rgba(200,168,75,0.5)');
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(px, py, 38, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(px, py + 20, 16, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Icon bubble
+    const bubR = 22;
+    ctx.beginPath();
+    ctx.arc(px, py, bubR, 0, Math.PI * 2);
+    ctx.fillStyle = ms.alive ? (ms.castT > 0 ? '#2a2045' : '#1a1530') : '#1a0e0e';
+    ctx.fill();
+    ctx.strokeStyle = ms.alive ? (EL_COLOR[ms.el] || '#c8a84b') : '#660000';
+    ctx.lineWidth = ms.castT > 0 ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Emoji
+    ctx.font = `${24}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ms.icon, px, py + 1);
+
+    // HP bar
+    const bw = 52, bh = 5;
+    const bx = px - bw / 2, by = py + bubR + 5;
+    ctx.fillStyle = '#0a0810';
+    ctx.fillRect(bx, by, bw, bh);
+    const hpPct = ms.maxHP > 0 ? Math.max(0, ms.hp / ms.maxHP) : 0;
+    const hpCol = hpPct > 0.5 ? '#50c060' : hpPct > 0.25 ? '#c0a030' : '#e04040';
+    ctx.fillStyle = hpCol;
+    ctx.fillRect(bx, by, bw * hpPct, bh);
+    ctx.strokeStyle = '#3a3060';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(bx, by, bw, bh);
+
+    // Name
+    ctx.font = `${11}px 'Crimson Text', serif`;
+    ctx.fillStyle = ms.alive ? '#b0a080' : '#603030';
+    ctx.fillText(ms.name.slice(0, 8), px, by + bh + 9);
+
+    ctx.restore();
+  });
+
+  // ── ENEMY SPRITES ──
+  arena.enemySprites.forEach(es => {
+    if(es.shakeT > 0) es.shakeT = Math.max(0, es.shakeT - dt);
+    if(es.castT !== undefined && es.castT > 0) es.castT = Math.max(0, es.castT - dt);
+    const e = G.waveEnemies?.find(e=>e.eid===es.eid);
+    if(e){ es.alive = e.alive; es.hp = e.hp; es.maxHP = e.maxHP; }
+
+    if(!es.alive) return;
+
+    const sx = es.shakeT > 0 ? (Math.random() - 0.5) * 8 : 0;
+    const sy = es.shakeT > 0 ? (Math.random() - 0.5) * 5 : 0;
+    const px = es.x + sx;
+    const py = es.y + sy;
+
+    ctx.save();
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(px, py + 20, 16, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bubble
+    const bubR = 22;
+    ctx.beginPath();
+    ctx.arc(px, py, bubR, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e0a0a';
+    ctx.fill();
+    ctx.strokeStyle = ENEMY_COLORS[es.name] || '#e05050';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.font = `${24}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(es.icon, px, py + 1);
+
+    // HP bar
+    const bw = 52, bh = 5;
+    const bx = px - bw / 2, by = py + bubR + 5;
+    ctx.fillStyle = '#0a0810';
+    ctx.fillRect(bx, by, bw, bh);
+    const hpPct = es.maxHP > 0 ? Math.max(0, es.hp / es.maxHP) : 0;
+    ctx.fillStyle = '#c03030';
+    ctx.fillRect(bx, by, bw * hpPct, bh);
+    ctx.strokeStyle = '#3a1010';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(bx, by, bw, bh);
+
+    ctx.font = `${10}px 'Crimson Text', serif`;
+    ctx.fillStyle = '#906050';
+    ctx.fillText(es.name.slice(0, 8), px, by + bh + 9);
+
+    ctx.restore();
+  });
+
+  // ── PROJECTILES ──
+  arena.projectiles = arena.projectiles.filter(p => {
+    p.ttl -= dt;
+    if(p.ttl <= 0) return false;
+
+    const dx = p.tx - p.x, dy = p.ty - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const step = p.speed * dt;
+
+    if(!p.hit && dist < step + 6){
+      p.hit = true;
+      if(p.onHit) p.onHit();
+      return false;
+    }
+
+    if(!p.hit){
+      p.x += (dx / dist) * step;
+      p.y += (dy / dist) * step;
+    }
+
+    ctx.save();
+    const isEnemy = p.el === '__enemy__';
+    const col = isEnemy ? '#c03030' : (EL_COLOR[p.el] || '#c8a84b');
+    const glow = isEnemy ? 'rgba(192,48,48,0.6)' : (EL_GLOW[p.el] || 'rgba(200,168,75,0.5)');
+
+    // Trail
+    const tdx = p.tx - p.x, tdy = p.ty - p.y;
+    const tlen = Math.sqrt(tdx*tdx + tdy*tdy);
+    if(tlen > 1){
+      const tx2 = p.x - (tdx/tlen) * Math.min(24, p.size * 2);
+      const ty2 = p.y - (tdy/tlen) * Math.min(24, p.size * 2);
+      const trailGrd = ctx.createLinearGradient(p.x, p.y, tx2, ty2);
+      trailGrd.addColorStop(0, col.replace(')', ',0.7)').replace('rgb', 'rgba'));
+      trailGrd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.strokeStyle = trailGrd;
+      ctx.lineWidth = p.size * 0.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(tx2, ty2);
+      ctx.stroke();
+    }
+
+    // Orb glow
+    const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+    grd.addColorStop(0, '#ffffff');
+    grd.addColorStop(0.3, col);
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer glow
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
+    return true;
+  });
+
+  // ── IMPACTS ──
+  arena.impacts = arena.impacts.filter(imp => {
+    imp.ttl -= dt;
+    if(imp.ttl <= 0) return false;
+    const progress = 1 - imp.ttl / 0.4;
+    imp.r = imp.maxR * progress;
+    imp.alpha = 0.9 * (1 - progress);
+
+    ctx.save();
+    const isEnemy = imp.el === '__enemy__';
+    const col = isEnemy ? '#e05050' : (EL_COLOR[imp.el] || '#c8a84b');
+    ctx.globalAlpha = imp.alpha;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(imp.x, imp.y, imp.r, 0, Math.PI * 2);
+    ctx.stroke();
+    // Inner flash
+    ctx.globalAlpha = imp.alpha * 0.4;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(imp.x, imp.y, imp.r * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return true;
+  });
+
+  // ── FLOATERS ──
+  arena.floaters = arena.floaters.filter(f => {
+    f.ttl -= dt;
+    if(f.ttl <= 0) return false;
+    f.y += f.vy * dt;
+    f.vy *= 0.92;
+    f.alpha = f.ttl / 0.9;
+
+    ctx.save();
+    ctx.globalAlpha = f.alpha;
+    ctx.font = `bold 13px 'Cinzel', serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = f.color;
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 8;
+    ctx.fillText(f.text, f.x, f.y);
+    ctx.restore();
+    return true;
+  });
+
+  arena.raf = requestAnimationFrame(arenaLoop);
+}
+
+// ── INIT BUTTONS ─────────────────────────────────────
+document.getElementById('btn-start').onclick = ()=>{
+  initState();
+  document.getElementById('level-badge').textContent='Level 1';
+  updateHUD();
+  showScreen('game');
+  renderAll();
+  arenaInit();
+};
+document.getElementById('btn-to-battle').onclick = ()=>startBattle();
+document.getElementById('btn-battle').onclick    = ()=>toggleBattle();
+document.getElementById('btn-speed').onclick     = ()=>toggleSpeed();
+
+// Boot
+showScreen('menu');
+</script>
+</body>
+</html>
