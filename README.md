@@ -18,8 +18,8 @@ The Loop
  and your surviving mages heal 20% HP before 
  the next one begins
 
- Tips
- Wand stats vary wildly
- Affinity matters. Each mage has an elemental affinity shown on their card
+ Tips:
+ Wand stats vary wildly,
+ Affinity matters. Each mage has an elemental affinity shown on their card.
  Don't over-assign.
  Enemies scale hard
