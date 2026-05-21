@@ -23,3 +23,7 @@ The Loop
  Affinity matters. Each mage has an elemental affinity shown on their card.
  Don't over-assign.
  Enemies scale hard
+
+
+TO PLAY (IMPORTANT)
+Run the wand-forge the final.html and have fun :)
